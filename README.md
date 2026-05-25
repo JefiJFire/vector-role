@@ -4,10 +4,8 @@
 
 ## Requirements
 
-- Ansible 2.10 или новее.
+- Ansible 2.20 или новее.
 - Целевая система: Debian/Ubuntu.
-- Доступ к [https://packages.timber.io/vector/](https://packages.timber.io/vector/) для загрузки архива (или зеркало).
-- На управляемой машине должны быть установлены `tar`, `gzip`, `systemd`.
 
 ## Role Variables
 
