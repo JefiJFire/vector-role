@@ -1,3 +1,21 @@
 #SPDX-License-Identifier: MIT-0
 ---
-# tasks file for vector-role
+- name: Add the Vector repo
+  become: true
+  ansible.builtin.shell: curl -L https://setup.vector.dev | bash
+  args:
+    creates: /usr/bin/vector
+
+- name: Install Vector
+  become: true
+  ansible.builtin.apt:
+    name: vector
+    state: present
+    update_cache: true
+
+- name: Configure Vector (systemd journal → ClickHouse)
+  become: true
+  ansible.builtin.template:
+    src: vector.toml.j2
+    dest: /etc/vector/vector.toml
+  notify: restart vector

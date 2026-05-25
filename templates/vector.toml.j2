@@ -1,0 +1,13 @@
+[sources.journald]
+type = "journald"
+include_units = []
+
+[sinks.clickhouse]
+type = "clickhouse"
+inputs = ["journald"]
+endpoint = "http://{{clickhouse}}:8123"
+database = "logs"
+table = "syslog"
+compression = "gzip"
+healthcheck = true
+auto_create_tables = true
