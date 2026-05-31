@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   role_name: vector
-  author: your_name
+  author: Korobeynikov Vladislav
   description: Install and configure Vector log aggregator on Debian-based hosts
   license: MIT
   min_ansible_version: "2.9"
