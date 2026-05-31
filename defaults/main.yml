@@ -1,3 +1,23 @@
-#SPDX-License-Identifier: MIT-0
 ---
-clickhouse: <ip_address>
+# Vector version to install (GitHub releases tag without 'v')
+vector_version: "0.55.0"
+
+# ClickHouse host for Vector sink
+clickhouse: "localhost"
+
+# Service settings
+vector_service_name: vector
+vector_service_enabled: true
+vector_service_state: started
+
+# User / group
+vector_user: vector
+vector_group: vector
+
+# Directories
+vector_config_dir: /etc/vector
+vector_data_dir: /var/lib/vector
+vector_log_dir: /var/log/vector
+
+# Config file path
+vector_config_file: "{{ vector_config_dir }}/vector.toml"

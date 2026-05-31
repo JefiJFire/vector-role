@@ -1,0 +1,131 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    vector_service_name: vector
+    vector_config_file: /etc/vector/vector.toml
+    vector_user: vector
+    vector_group: vector
+    vector_binary: /usr/bin/vector
+    vector_data_dir: /var/lib/vector
+    vector_config_dir: /etc/vector
+
+  tasks:
+
+    # ── 1. Binary ──────────────────────────────────────────────────────────────
+    - name: Check that Vector binary exists
+      ansible.builtin.stat:
+        path: "{{ vector_binary }}"
+      register: vector_bin
+
+    - name: Assert Vector binary is present and executable
+      ansible.builtin.assert:
+        that:
+          - vector_bin.stat.exists
+          - vector_bin.stat.executable
+        fail_msg: "Vector binary not found or not executable at {{ vector_binary }}"
+        success_msg: "Vector binary exists and is executable"
+
+    # ── 2. Version ────────────────────────────────────────────────────────────
+    - name: Get Vector version
+      ansible.builtin.command: vector --version
+      register: vector_version_output
+      changed_when: false
+
+    - name: Assert Vector version output is correct
+      ansible.builtin.assert:
+        that:
+          - vector_version_output.rc == 0
+          - "'vector' in vector_version_output.stdout | lower"
+        fail_msg: "vector --version failed or returned unexpected output"
+        success_msg: "Vector version: {{ vector_version_output.stdout }}"
+
+    # ── 3. Config file ────────────────────────────────────────────────────────
+    - name: Stat Vector config file
+      ansible.builtin.stat:
+        path: "{{ vector_config_file }}"
+      register: vector_cfg
+
+    - name: Assert config file exists
+      ansible.builtin.assert:
+        that: vector_cfg.stat.exists
+        fail_msg: "Config file {{ vector_config_file }} not found"
+        success_msg: "Config file exists"
+
+    - name: Assert config file has correct permissions
+      ansible.builtin.assert:
+        that:
+          - vector_cfg.stat.pw_name == vector_user
+          - vector_cfg.stat.mode == "0640"
+        fail_msg: >
+          Config file owner/permissions wrong:
+          owner={{ vector_cfg.stat.pw_name }} (expected {{ vector_user }}),
+          mode={{ vector_cfg.stat.mode }} (expected 0640)
+        success_msg: "Config file owner and permissions are correct"
+
+    # ── 4. Config content ─────────────────────────────────────────────────────
+    - name: Read Vector config file
+      ansible.builtin.slurp:
+        src: "{{ vector_config_file }}"
+      register: vector_config_content
+
+    - name: Assert config contains required sections
+      ansible.builtin.assert:
+        that:
+          - "'sources' in (vector_config_content.content | b64decode)"
+          - "'sinks' in (vector_config_content.content | b64decode)"
+          - "'journald' in (vector_config_content.content | b64decode)"
+          - "'clickhouse' in (vector_config_content.content | b64decode)"
+        fail_msg: "Config file is missing required sections"
+        success_msg: "Config file contains all required sections"
+
+    # ── 5. Directories ────────────────────────────────────────────────────────
+    - name: Stat required directories
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: vector_dirs
+      loop:
+        - "{{ vector_config_dir }}"
+        - "{{ vector_data_dir }}"
+
+    - name: Assert required directories exist
+      ansible.builtin.assert:
+        that: item.stat.exists and item.stat.isdir
+        fail_msg: "Required directory {{ item.item }} does not exist"
+        success_msg: "Directory {{ item.item }} exists"
+      loop: "{{ vector_dirs.results }}"
+
+    # ── 6. Service running ────────────────────────────────────────────────────
+    - name: Collect service facts
+      ansible.builtin.service_facts:
+
+    - name: Assert Vector service is running
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services[vector_service_name + '.service'] is defined
+          - ansible_facts.services[vector_service_name + '.service'].state == 'running'
+        fail_msg: "Vector service is not running"
+        success_msg: "Vector service is running"
+
+    - name: Assert Vector service is enabled
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services[vector_service_name + '.service'].status == 'enabled'
+        fail_msg: "Vector service is not enabled"
+        success_msg: "Vector service is enabled"
+
+    # ── 7. Process running ────────────────────────────────────────────────────
+    - name: Check Vector process is running
+      ansible.builtin.command: pgrep -x vector
+      register: vector_pgrep
+      changed_when: false
+      failed_when: vector_pgrep.rc not in [0, 1]
+
+    - name: Assert Vector process exists
+      ansible.builtin.assert:
+        that: vector_pgrep.rc == 0
+        fail_msg: "No vector process found"
+        success_msg: "Vector process is running (PID: {{ vector_pgrep.stdout }})"

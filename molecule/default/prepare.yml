@@ -1,0 +1,38 @@
+---
+- name: Prepare Debian/Ubuntu
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Install Python3 on Debian/Ubuntu
+      when: ansible_os_family == "Debian"
+      block:
+        - name: Ensure apt cache is warm
+          ansible.builtin.apt:
+            update_cache: true
+            cache_valid_time: 3600
+
+        - name: Install Python3
+          ansible.builtin.apt:
+            name:
+              - python3
+              - curl
+            state: present
+
+    - name: Install Python3 on RedHat/OracleLinux
+      when: ansible_os_family == "RedHat"
+      block:
+        - name: Install Python3 and curl
+          ansible.builtin.yum:
+            name:
+              - python3
+              - curl
+            state: present
+
+        - name: Install systemd (OracleLinux minimal image)
+          ansible.builtin.yum:
+            name:
+              - systemd
+              - procps-ng
+            state: present

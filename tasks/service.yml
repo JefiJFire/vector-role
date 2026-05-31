@@ -1,0 +1,7 @@
+---
+- name: Ensure Vector service is {{ vector_service_state }} and enabled={{ vector_service_enabled }}
+  ansible.builtin.service:
+    name: "{{ vector_service_name }}"
+    state: "{{ vector_service_state }}"
+    enabled: "{{ vector_service_enabled }}"
+  become: true

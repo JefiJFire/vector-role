@@ -1,21 +1,16 @@
-#SPDX-License-Identifier: MIT-0
 ---
-- name: Add the Vector repo
-  become: true
-  ansible.builtin.shell: curl -L https://setup.vector.dev | bash
-  args:
-    creates: /usr/bin/vector
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  failed_when: false
 
 - name: Install Vector
-  become: true
-  ansible.builtin.apt:
-    name: vector
-    state: present
-    update_cache: true
+  ansible.builtin.import_tasks: install.yml
+  tags: [vector, install]
 
-- name: Configure Vector (systemd journal → ClickHouse)
-  become: true
-  ansible.builtin.template:
-    src: vector.toml.j2
-    dest: /etc/vector/vector.toml
-  notify: restart vector
+- name: Configure Vector
+  ansible.builtin.import_tasks: configure.yml
+  tags: [vector, configure]
+
+- name: Manage Vector service
+  ansible.builtin.import_tasks: service.yml
+  tags: [vector, service]
