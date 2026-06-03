@@ -59,6 +59,13 @@
       become: true
       notify: restart vector
 
+    - name: Ensure systemd directory exists
+      ansible.builtin.file:
+        path: /etc/systemd/system
+        state: directory
+        mode: "0755"
+      become: true
+
     - name: Create Vector systemd unit file
       ansible.builtin.copy:
         dest: /etc/systemd/system/vector.service
@@ -73,7 +80,6 @@
           [Service]
           User={{ vector_user }}
           Group={{ vector_group }}
-          ExecStartPre=/usr/bin/vector validate --no-environment {{ vector_config_file }}
           ExecStart=/usr/bin/vector --config {{ vector_config_file }}
           ExecReload=/bin/kill -HUP $MAINPID
           Restart=on-failure

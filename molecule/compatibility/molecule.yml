@@ -1,0 +1,24 @@
+---
+dependency:
+  name: galaxy
+  enabled: false
+
+driver:
+  name: podman
+
+platforms:
+  - name: fedora-latest-compat
+    image: docker.io/pycontribs/fedora:latest
+    pre_build_image: true
+
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        clickhouse: "localhost"
+        vector_service_state: stopped
+        vector_service_enabled: false
+
+verifier:
+  name: ansible

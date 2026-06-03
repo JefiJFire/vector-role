@@ -1,23 +1,24 @@
 ---
 galaxy_info:
   role_name: vector
-  author: Korobeynikov Vladislav
-  description: Install and configure Vector log aggregator on Debian-based hosts
+  author: netology
+  namespace: netology
+  description: Install and configure Vector log aggregator
   license: MIT
-  min_ansible_version: "2.9"
+  min_ansible_version: "2.10"
   platforms:
     - name: Debian
       versions:
-        - buster
         - bullseye
-        - bookworm
     - name: Ubuntu
       versions:
         - focal
         - jammy
+    - name: EL
+      versions:
+        - "8"
   galaxy_tags:
     - vector
     - logging
-    - observability
 
 dependencies: []

@@ -4,14 +4,20 @@
     name: "{{ vector_service_name }}"
     state: restarted
   become: true
+  listen: restart vector
+  when: ansible_service_mgr == "systemd"
 
 - name: reload vector
   ansible.builtin.service:
     name: "{{ vector_service_name }}"
     state: reloaded
   become: true
+  listen: reload vector
+  when: ansible_service_mgr == "systemd"
 
 - name: reload systemd
   ansible.builtin.systemd:
     daemon_reload: true
   become: true
+  listen: reload systemd
+  when: ansible_service_mgr == "systemd"

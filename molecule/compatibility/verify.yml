@@ -1,0 +1,64 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    vector_binary: /usr/bin/vector
+    vector_config_file: /etc/vector/vector.toml
+    vector_user: vector
+
+  tasks:
+
+    - name: Check Vector binary exists
+      ansible.builtin.stat:
+        path: "{{ vector_binary }}"
+      register: vector_bin
+
+    - name: Assert Vector binary is present and executable
+      ansible.builtin.assert:
+        that:
+          - vector_bin.stat.exists
+          - vector_bin.stat.executable
+        fail_msg: "Vector binary not found at {{ vector_binary }}"
+        success_msg: "Vector binary exists and is executable"
+
+    - name: Get Vector version
+      ansible.builtin.command: vector --version
+      register: vector_version_output
+      changed_when: false
+
+    - name: Assert Vector responds to --version
+      ansible.builtin.assert:
+        that:
+          - vector_version_output.rc == 0
+          - "'vector' in vector_version_output.stdout | lower"
+        fail_msg: "vector --version failed"
+        success_msg: "Vector version: {{ vector_version_output.stdout }}"
+
+    - name: Stat Vector config file
+      ansible.builtin.stat:
+        path: "{{ vector_config_file }}"
+      register: vector_cfg
+
+    - name: Assert config file exists with correct owner
+      ansible.builtin.assert:
+        that:
+          - vector_cfg.stat.exists
+          - vector_cfg.stat.pw_name == vector_user
+        fail_msg: "Config missing or wrong owner"
+        success_msg: "Config file OK"
+
+    - name: Read Vector config
+      ansible.builtin.slurp:
+        src: "{{ vector_config_file }}"
+      register: vector_config_content
+
+    - name: Assert config contains required sections
+      ansible.builtin.assert:
+        that:
+          - "'journald' in (vector_config_content.content | b64decode)"
+          - "'clickhouse' in (vector_config_content.content | b64decode)"
+        fail_msg: "Config missing required sections"
+        success_msg: "Config contains all required sections"
